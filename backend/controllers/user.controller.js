@@ -80,12 +80,21 @@ export const logoutUser = (req, res) => {
 
 export const getUserProfile = async (req, res) => {
   try {
-    res.status(200).json({success: true,user: req.user})
+    const { _id, password, __v, ...user } = req.user.toObject();
+
+    res.status(200).json({
+      user: {
+        id: _id,
+        ...user,
+      },
+    });
   } catch (error) {
     console.log(error);
-    res.status(500).json({message: "Internal server error"})
+    res.status(500).json({
+      message: "Internal server error",
+    });
   }
-}
+};
 
 export const updateProfile = async (req, res) => {
   try {
@@ -138,14 +147,66 @@ export const updateProfile = async (req, res) => {
     const { password, ...updatedUser } = req.user.toObject();
 
     res.status(200).json({
-      success: true,
       message: "Profile updated successfully",
       user: updatedUser,
     });
   } catch (error) {
     console.error(error);
     res.status(500).json({
-      success: false,
+      message: "Server Error",
+    });
+  }
+};
+
+
+export const getUserById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const user = await User.findById(id).select("-password");
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    res.status(200).json({
+      user,
+    });
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      message: "Server Error",
+    });
+  }
+};
+
+export const getEntrepreneurs = async (req, res) => {
+  try {
+    const entrepreneurs = await User.find({ role: "entrepreneur" }).select("-password");
+
+    res.status(200).json({
+      entrepreneurs,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Server Error",
+    });
+  }
+};
+
+export const getInvestors = async (req, res) => {
+  try {
+    const investors = await User.find({ role: "investor" }).select("-password");
+
+    res.status(200).json({
+      investors,
+    });
+  } catch (error) {
+    res.status(500).json({
       message: "Server Error",
     });
   }
