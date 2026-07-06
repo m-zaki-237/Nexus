@@ -1,21 +1,18 @@
 import User from "../models/user.model.js";
-import bycrypt from "bcryptjs";
+import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
 export const registerUser = async (req, res) => {
   const { name, email, password, role } = req.body;
 
   try {
-    // Check if user already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ message: "User already exists" });
     }
 
-    // Hash the password
-    const hashedPassword = await bycrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create a new user
     const newUser = new User({
       name,
       email,
@@ -23,18 +20,15 @@ export const registerUser = async (req, res) => {
       role,
     });
 
-    // Save the user to the database
     await newUser.save();
 
-    // Generate a JWT token
     const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET_KEY, {
       expiresIn: "7d",
     });
 
-    // Set the token in a cookie
     res.cookie("token", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: false,
       sameSite: "lax",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
@@ -50,24 +44,21 @@ export const loginUser = async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    // Check if user exists
+
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(400).json({ message: "Invalid credentials" });
+      return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    // Compare the password
-    const isMatch = await bycrypt.compare(password, user.password);
+    const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.status(400).json({ message: "Invalid credentials" });
+      return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    // Generate a JWT token
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET_KEY, {
       expiresIn: "7d",
     });
 
-    // Set the token in a cookie
     res.cookie("token", token, {
       httpOnly: true,
       secure: false,
@@ -79,5 +70,83 @@ export const loginUser = async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const logoutUser = (req, res) => {
+  res.clearCookie("token");
+  res.status(200).json({ message: "User logged out successfully" });
+};
+
+export const getUserProfile = async (req, res) => {
+  try {
+    res.status(200).json({success: true,user: req.user})
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({message: "Internal server error"})
+  }
+}
+
+export const updateProfile = async (req, res) => {
+  try {
+    const {
+      name,
+      bio,
+      avatarUrl,
+      startupName,
+      pitchSummary,
+      fundingNeeded,
+      industry,
+      location,
+      foundedYear,
+      teamSize,
+      investmentInterests,
+      investmentStage,
+      portfolioCompanies,
+      minimumInvestment,
+      maximumInvestment,
+    } = req.body;
+
+    if (name !== undefined) req.user.name = name;
+    if (bio !== undefined) req.user.bio = bio;
+    if (avatarUrl !== undefined) req.user.avatarUrl = avatarUrl;
+
+    if (req.user.role === "entrepreneur") {
+      if (startupName !== undefined) req.user.startupName = startupName;
+      if (pitchSummary !== undefined) req.user.pitchSummary = pitchSummary;
+      if (fundingNeeded !== undefined) req.user.fundingNeeded = fundingNeeded;
+      if (industry !== undefined) req.user.industry = industry;
+      if (location !== undefined) req.user.location = location;
+      if (foundedYear !== undefined) req.user.foundedYear = foundedYear;
+      if (teamSize !== undefined) req.user.teamSize = teamSize;
+    }
+
+    if (req.user.role === "investor") {
+      if (investmentInterests !== undefined)
+        req.user.investmentInterests = investmentInterests;
+      if (investmentStage !== undefined)
+        req.user.investmentStage = investmentStage;
+      if (portfolioCompanies !== undefined)
+        req.user.portfolioCompanies = portfolioCompanies;
+      if (minimumInvestment !== undefined)
+        req.user.minimumInvestment = minimumInvestment;
+      if (maximumInvestment !== undefined)
+        req.user.maximumInvestment = maximumInvestment;
+    }
+
+    await req.user.save();
+    const { password, ...updatedUser } = req.user.toObject();
+
+    res.status(200).json({
+      success: true,
+      message: "Profile updated successfully",
+      user: updatedUser,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: "Server Error",
+    });
   }
 };
