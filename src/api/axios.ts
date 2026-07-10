@@ -1,8 +1,9 @@
-import axios from 'axios'
+export const api = axios.create({
+  baseURL: import.meta.env.VITE_API_URL,
+  withCredentials: true,
+});
 
-const api = axios.create({
-    baseURL: "http://localhost:8000/api",
-    withCredentials: true
-})
 
-export default api
+export const socket = io(import.meta.env.VITE_SOCKET_URL, {
+  withCredentials: true,
+});

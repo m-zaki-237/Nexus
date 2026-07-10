@@ -201,7 +201,7 @@ export const DocumentsPage: React.FC = () => {
 
                         <div className="flex items-center gap-2 ml-4">
                           <a
-                            href={`http://localhost:8000${doc.fileUrl}`}
+                            href={import.meta.env.VITE_API_URL + doc.fileUrl}
                             target="_blank"
                             rel="noopener noreferrer"
                           >
