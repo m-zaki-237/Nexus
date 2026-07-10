@@ -45,11 +45,11 @@ const port = process.env.PORT || 5000
 
 connectDB()
 
-app.use('/api', userRouter)
-app.use('/api/collaboration-requests', collaborationRequestRouter)
-app.use('/api/meetings', meetingRouter)
-app.use('/api/documents', documentRouter)
-app.use('/api/messages', messageRouter)
+app.use('/', userRouter)
+app.use('/collaboration-requests', collaborationRequestRouter)
+app.use('/meetings', meetingRouter)
+app.use('/documents', documentRouter)
+app.use('/messages', messageRouter)
 
 // Socket.IO - real-time chat
 const onlineUsers = new Map(); // userId -> socketId
