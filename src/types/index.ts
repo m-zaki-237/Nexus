@@ -2,12 +2,14 @@ export type UserRole = 'entrepreneur' | 'investor';
 
 export interface User {
   id: string;
+  _id?: string;
   name: string;
   email: string;
   role: UserRole;
   avatarUrl: string;
   bio: string;
   isOnline?: boolean;
+  location?: string;
   createdAt: string;
 }
 
@@ -50,46 +52,50 @@ export interface ChatConversation {
 
 export interface CollaborationRequest {
   id: string;
-  investorId: string;
-  entrepreneurId: string;
+  // These are populated objects when coming from backend
+  investorId: string | Investor;
+  entrepreneurId: string | Entrepreneur;
   message: string;
   status: 'pending' | 'accepted' | 'rejected';
   createdAt: string;
 }
 
+export interface Meeting {
+  id: string;
+  title: string;
+  organizerId: string | User;
+  participantId: string | User;
+  startTime: string;
+  endTime: string;
+  status: 'pending' | 'accepted' | 'rejected' | 'cancelled';
+  notes?: string;
+  meetingLink?: string;
+  createdAt: string;
+}
+
 export interface Document {
   id: string;
-  name: string;
-  type: string;
-  size: string;
-  lastModified: string;
-  shared: boolean;
-  url: string;
-  ownerId: string;
+  title: string;
+  ownerId: string | User;
+  fileUrl: string;
+  fileName: string;
+  fileSize: number;
+  mimeType: string;
+  version: number;
+  status: 'draft' | 'active' | 'archived';
+  sharedWith: (string | User)[];
+  signatureUrl?: string;
+  isSigned: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface AuthContextType {
   user: User | null;
-
-  login: (
-    email: string,
-    password: string,
-    role: UserRole
-  ) => Promise<void>;
-
-  register: (
-    name: string,
-    email: string,
-    password: string,
-    role: UserRole
-  ) => Promise<void>;
-
+  login: (email: string, password: string, role: UserRole) => Promise<void>;
+  register: (name: string, email: string, password: string, role: UserRole) => Promise<void>;
   logout: () => Promise<void>;
-
-  updateProfile: (
-    updates: Partial<User>
-  ) => Promise<void>;
-
+  updateProfile: (updates: Partial<User>) => Promise<void>;
   isAuthenticated: boolean;
   isLoading: boolean;
 }

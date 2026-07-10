@@ -1,84 +1,88 @@
-import React, { useState } from 'react';
-import { Search, Filter, DollarSign, TrendingUp, Users, Calendar } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Search, Filter, DollarSign, TrendingUp, Users, CheckCircle2, Plus } from 'lucide-react';
 import { Card, CardHeader, CardBody } from '../../components/ui/Card';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { Avatar } from '../../components/ui/Avatar';
+import api from '../../api/axios';
+import { useAuth } from '../../context/AuthContext';
+import toast from 'react-hot-toast';
 
-const deals = [
-  {
-    id: 1,
-    startup: {
-      name: 'TechWave AI',
-      logo: 'https://images.pexels.com/photos/774909/pexels-photo-774909.jpeg',
-      industry: 'FinTech'
-    },
-    amount: '$1.5M',
-    equity: '15%',
-    status: 'Due Diligence',
-    stage: 'Series A',
-    lastActivity: '2024-02-15'
-  },
-  {
-    id: 2,
-    startup: {
-      name: 'GreenLife Solutions',
-      logo: 'https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg',
-      industry: 'CleanTech'
-    },
-    amount: '$2M',
-    equity: '20%',
-    status: 'Term Sheet',
-    stage: 'Seed',
-    lastActivity: '2024-02-10'
-  },
-  {
-    id: 3,
-    startup: {
-      name: 'HealthPulse',
-      logo: 'https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg',
-      industry: 'HealthTech'
-    },
-    amount: '$800K',
-    equity: '12%',
-    status: 'Negotiation',
-    stage: 'Pre-seed',
-    lastActivity: '2024-02-05'
-  }
-];
+type DealStatus = 'Due Diligence' | 'Term Sheet' | 'Negotiation' | 'Closed' | 'Passed';
+
+interface Deal {
+  _id: string;
+  entrepreneurId: any;
+  investorId: any;
+  amount: string;
+  equity: string;
+  status: DealStatus;
+  stage: string;
+  notes: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+const STATUS_COLORS: Record<DealStatus, 'primary' | 'secondary' | 'accent' | 'success' | 'error'> = {
+  'Due Diligence': 'primary',
+  'Term Sheet': 'secondary',
+  'Negotiation': 'accent',
+  'Closed': 'success',
+  'Passed': 'error',
+};
+
+const STATUSES: DealStatus[] = ['Due Diligence', 'Term Sheet', 'Negotiation', 'Closed', 'Passed'];
 
 export const DealsPage: React.FC = () => {
+  const { user } = useAuth();
+  const [deals, setDeals] = useState<Deal[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedStatus, setSelectedStatus] = useState<string[]>([]);
-  
-  const statuses = ['Due Diligence', 'Term Sheet', 'Negotiation', 'Closed', 'Passed'];
-  
-  const toggleStatus = (status: string) => {
-    setSelectedStatus(prev => 
-      prev.includes(status)
-        ? prev.filter(s => s !== status)
-        : [...prev, status]
+  const [selectedStatus, setSelectedStatus] = useState<DealStatus[]>([]);
+
+  // Derive real stats from live data
+  const totalAmount = deals
+    .filter(d => d.status === 'Closed')
+    .reduce((sum, d) => {
+      const n = parseFloat(d.amount?.replace(/[^0-9.]/g, '') || '0');
+      return sum + n;
+    }, 0);
+  const activeCount = deals.filter(d => !['Closed', 'Passed'].includes(d.status)).length;
+  const closedCount = deals.filter(d => d.status === 'Closed').length;
+
+  useEffect(() => {
+    const fetchDeals = async () => {
+      try {
+        const res = await api.get('/deals');
+        setDeals(res.data.deals || []);
+      } catch (err: any) {
+        // 404 means route not yet set up — show empty state
+        if (err.response?.status !== 404) {
+          toast.error('Failed to load deals');
+        }
+        setDeals([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchDeals();
+  }, []);
+
+  const toggleStatus = (s: DealStatus) =>
+    setSelectedStatus(prev =>
+      prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]
     );
-  };
-  
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'Due Diligence':
-        return 'primary';
-      case 'Term Sheet':
-        return 'secondary';
-      case 'Negotiation':
-        return 'accent';
-      case 'Closed':
-        return 'success';
-      case 'Passed':
-        return 'error';
-      default:
-        return 'gray';
-    }
-  };
-  
+
+  const filtered = deals.filter(deal => {
+    const name = deal.entrepreneurId?.name || deal.investorId?.name || '';
+    const industry = deal.entrepreneurId?.industry || '';
+    const query = searchQuery.toLowerCase();
+    const matchesSearch = !query || name.toLowerCase().includes(query) || industry.toLowerCase().includes(query);
+    const matchesStatus = selectedStatus.length === 0 || selectedStatus.includes(deal.status);
+    return matchesSearch && matchesStatus;
+  });
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex justify-between items-center">
@@ -86,13 +90,10 @@ export const DealsPage: React.FC = () => {
           <h1 className="text-2xl font-bold text-gray-900">Investment Deals</h1>
           <p className="text-gray-600">Track and manage your investment pipeline</p>
         </div>
-        
-        <Button>
-          Add Deal
-        </Button>
+        <Button leftIcon={<Plus size={18} />}>Add Deal</Button>
       </div>
-      
-      {/* Stats */}
+
+      {/* Live stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardBody>
@@ -101,13 +102,15 @@ export const DealsPage: React.FC = () => {
                 <DollarSign size={20} className="text-primary-600" />
               </div>
               <div>
-                <p className="text-sm text-gray-600">Total Investment</p>
-                <p className="text-lg font-semibold text-gray-900">$4.3M</p>
+                <p className="text-sm text-gray-600">Total Closed</p>
+                <p className="text-lg font-semibold text-gray-900">
+                  {totalAmount > 0 ? `$${totalAmount.toLocaleString()}` : '—'}
+                </p>
               </div>
             </div>
           </CardBody>
         </Card>
-        
+
         <Card>
           <CardBody>
             <div className="flex items-center">
@@ -116,12 +119,12 @@ export const DealsPage: React.FC = () => {
               </div>
               <div>
                 <p className="text-sm text-gray-600">Active Deals</p>
-                <p className="text-lg font-semibold text-gray-900">8</p>
+                <p className="text-lg font-semibold text-gray-900">{activeCount}</p>
               </div>
             </div>
           </CardBody>
         </Card>
-        
+
         <Card>
           <CardBody>
             <div className="flex items-center">
@@ -129,142 +132,124 @@ export const DealsPage: React.FC = () => {
                 <Users size={20} className="text-accent-600" />
               </div>
               <div>
-                <p className="text-sm text-gray-600">Portfolio Companies</p>
-                <p className="text-lg font-semibold text-gray-900">12</p>
+                <p className="text-sm text-gray-600">Total Deals</p>
+                <p className="text-lg font-semibold text-gray-900">{deals.length}</p>
               </div>
             </div>
           </CardBody>
         </Card>
-        
+
         <Card>
           <CardBody>
             <div className="flex items-center">
-              <div className="p-3 bg-success-100 rounded-lg mr-3">
-                <Calendar size={20} className="text-success-600" />
+              <div className="p-3 bg-green-100 rounded-lg mr-3">
+                <CheckCircle2 size={20} className="text-green-600" />
               </div>
               <div>
-                <p className="text-sm text-gray-600">Closed This Month</p>
-                <p className="text-lg font-semibold text-gray-900">2</p>
+                <p className="text-sm text-gray-600">Closed Deals</p>
+                <p className="text-lg font-semibold text-gray-900">{closedCount}</p>
               </div>
             </div>
           </CardBody>
         </Card>
       </div>
-      
+
       {/* Filters */}
       <div className="flex flex-col md:flex-row gap-4">
         <div className="w-full md:w-2/3">
           <Input
-            placeholder="Search deals by startup name or industry..."
+            placeholder="Search by startup name or industry..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={e => setSearchQuery(e.target.value)}
             startAdornment={<Search size={18} />}
             fullWidth
           />
         </div>
-        
-        <div className="w-full md:w-1/3">
-          <div className="flex items-center gap-2">
-            <Filter size={18} className="text-gray-500" />
-            <div className="flex flex-wrap gap-2">
-              {statuses.map(status => (
-                <Badge
-                  key={status}
-                  variant={selectedStatus.includes(status) ? getStatusColor(status) : 'gray'}
-                  className="cursor-pointer"
-                  onClick={() => toggleStatus(status)}
-                >
-                  {status}
-                </Badge>
-              ))}
-            </div>
-          </div>
+        <div className="w-full md:w-1/3 flex items-center gap-2 flex-wrap">
+          <Filter size={18} className="text-gray-500 flex-shrink-0" />
+          {STATUSES.map(s => (
+            <Badge
+              key={s}
+              variant={selectedStatus.includes(s) ? STATUS_COLORS[s] : 'gray'}
+              className="cursor-pointer"
+              onClick={() => toggleStatus(s)}
+            >
+              {s}
+            </Badge>
+          ))}
         </div>
       </div>
-      
-      {/* Deals table */}
+
+      {/* Table */}
       <Card>
         <CardHeader>
-          <h2 className="text-lg font-medium text-gray-900">Active Deals</h2>
+          <h2 className="text-lg font-medium text-gray-900">
+            {selectedStatus.length > 0 ? `${selectedStatus.join(', ')} Deals` : 'All Deals'}
+          </h2>
         </CardHeader>
         <CardBody>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-gray-200">
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Startup
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Amount
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Equity
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Stage
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Last Activity
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {deals.map(deal => (
-                  <tr key={deal.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <Avatar
-                          src={deal.startup.logo}
-                          alt={deal.startup.name}
-                          size="sm"
-                          className="flex-shrink-0"
-                        />
-                        <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">
-                            {deal.startup.name}
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            {deal.startup.industry}
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{deal.amount}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{deal.equity}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <Badge variant={getStatusColor(deal.status)}>
-                        {deal.status}
-                      </Badge>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{deal.stage}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-500">
-                        {new Date(deal.lastActivity).toLocaleDateString()}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <Button variant="outline" size="sm">
-                        View Details
-                      </Button>
-                    </td>
+          {loading ? (
+            <div className="text-center py-12 text-gray-500">Loading deals...</div>
+          ) : filtered.length === 0 ? (
+            <div className="text-center py-12">
+              <TrendingUp size={40} className="mx-auto text-gray-300 mb-3" />
+              <p className="text-gray-500 font-medium">No deals yet</p>
+              <p className="text-sm text-gray-400 mt-1">
+                {user?.role === 'investor'
+                  ? 'Connect with entrepreneurs and track your investment pipeline here.'
+                  : 'When investors make deals with you, they will appear here.'}
+              </p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-gray-200">
+                    {['Startup', 'Amount', 'Equity', 'Status', 'Stage', 'Last Activity', 'Actions'].map(h => (
+                      <th key={h} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        {h}
+                      </th>
+                    ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {filtered.map(deal => {
+                    const startup = deal.entrepreneurId;
+                    return (
+                      <tr key={deal._id} className="hover:bg-gray-50">
+                        <td className="px-4 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <Avatar
+                              src={startup?.avatarUrl || ''}
+                              alt={startup?.name || ''}
+                              size="sm"
+                              className="flex-shrink-0"
+                            />
+                            <div className="ml-3">
+                              <p className="text-sm font-medium text-gray-900">{startup?.name || '—'}</p>
+                              <p className="text-xs text-gray-500">{startup?.industry || '—'}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-4 text-sm text-gray-900">{deal.amount || '—'}</td>
+                        <td className="px-4 py-4 text-sm text-gray-900">{deal.equity || '—'}</td>
+                        <td className="px-4 py-4">
+                          <Badge variant={STATUS_COLORS[deal.status]}>{deal.status}</Badge>
+                        </td>
+                        <td className="px-4 py-4 text-sm text-gray-900">{deal.stage || '—'}</td>
+                        <td className="px-4 py-4 text-sm text-gray-500">
+                          {new Date(deal.updatedAt).toLocaleDateString()}
+                        </td>
+                        <td className="px-4 py-4 text-right">
+                          <Button variant="outline" size="sm">View</Button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
         </CardBody>
       </Card>
     </div>

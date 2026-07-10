@@ -27,6 +27,9 @@ import { SettingsPage } from './pages/settings/SettingsPage';
 import { HelpPage } from './pages/help/HelpPage';
 import { DealsPage } from './pages/deals/DealsPage';
 
+// Meetings
+import { MeetingsPage } from './pages/meetings/MeetingsPage';
+
 // Chat Pages
 import { ChatPage } from './pages/chat/ChatPage';
 
@@ -82,6 +85,10 @@ function App() {
           
           <Route path="/deals" element={<DashboardLayout />}>
             <Route index element={<DealsPage />} />
+          </Route>
+
+          <Route path="/meetings" element={<DashboardLayout />}>
+            <Route index element={<MeetingsPage />} />
           </Route>
           
           {/* Chat Routes */}

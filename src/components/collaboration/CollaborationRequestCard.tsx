@@ -6,9 +6,9 @@ import { Card, CardBody, CardFooter } from '../ui/Card';
 import { Avatar } from '../ui/Avatar';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
-import { findUserById } from '../../data/users';
-import { updateRequestStatus } from '../../data/collaborationRequests';
 import { formatDistanceToNow } from 'date-fns';
+import api from '../../api/axios';
+import toast from 'react-hot-toast';
 
 interface CollaborationRequestCardProps {
   request: CollaborationRequest;
@@ -17,104 +17,90 @@ interface CollaborationRequestCardProps {
 
 export const CollaborationRequestCard: React.FC<CollaborationRequestCardProps> = ({
   request,
-  onStatusUpdate
+  onStatusUpdate,
 }) => {
   const navigate = useNavigate();
-  const investor = findUserById(request.investorId);
-  
+
+  // Backend populates investorId as an object
+  const investor = (request as any).investorId as any;
   if (!investor) return null;
-  
-  const handleAccept = () => {
-    updateRequestStatus(request.id, 'accepted');
-    if (onStatusUpdate) {
-      onStatusUpdate(request.id, 'accepted');
+
+  const investorId = investor._id || investor.id;
+  const investorName = investor.name || 'Unknown Investor';
+  const investorAvatar = investor.avatarUrl || '';
+  const investorOnline = investor.isOnline || false;
+
+  const handleAccept = async () => {
+    try {
+      await api.patch(`/collaboration-requests/${request.id}/status`, { status: 'accepted' });
+      onStatusUpdate?.(request.id, 'accepted');
+      toast.success('Request accepted');
+    } catch {
+      toast.error('Failed to update request');
     }
   };
-  
-  const handleReject = () => {
-    updateRequestStatus(request.id, 'rejected');
-    if (onStatusUpdate) {
-      onStatusUpdate(request.id, 'rejected');
+
+  const handleReject = async () => {
+    try {
+      await api.patch(`/collaboration-requests/${request.id}/status`, { status: 'rejected' });
+      onStatusUpdate?.(request.id, 'rejected');
+      toast.success('Request declined');
+    } catch {
+      toast.error('Failed to update request');
     }
   };
-  
-  const handleMessage = () => {
-    navigate(`/chat/${investor.id}`);
-  };
-  
-  const handleViewProfile = () => {
-    navigate(`/profile/investor/${investor.id}`);
-  };
-  
+
   const getStatusBadge = () => {
     switch (request.status) {
-      case 'pending':
-        return <Badge variant="warning">Pending</Badge>;
-      case 'accepted':
-        return <Badge variant="success">Accepted</Badge>;
-      case 'rejected':
-        return <Badge variant="error">Declined</Badge>;
-      default:
-        return null;
+      case 'pending': return <Badge variant="warning">Pending</Badge>;
+      case 'accepted': return <Badge variant="success">Accepted</Badge>;
+      case 'rejected': return <Badge variant="error">Declined</Badge>;
+      default: return null;
     }
   };
-  
+
   return (
     <Card className="transition-all duration-300">
       <CardBody className="flex flex-col">
         <div className="flex justify-between items-start">
           <div className="flex items-start">
             <Avatar
-              src={investor.avatarUrl}
-              alt={investor.name}
+              src={investorAvatar}
+              alt={investorName}
               size="md"
-              status={investor.isOnline ? 'online' : 'offline'}
+              status={investorOnline ? 'online' : 'offline'}
               className="mr-3"
             />
-            
             <div>
-              <h3 className="text-md font-semibold text-gray-900">{investor.name}</h3>
+              <h3 className="text-md font-semibold text-gray-900">{investorName}</h3>
               <p className="text-sm text-gray-500">
                 {formatDistanceToNow(new Date(request.createdAt), { addSuffix: true })}
               </p>
             </div>
           </div>
-          
           {getStatusBadge()}
         </div>
-        
         <div className="mt-4">
           <p className="text-sm text-gray-600">{request.message}</p>
         </div>
       </CardBody>
-      
+
       <CardFooter className="border-t border-gray-100 bg-gray-50">
         {request.status === 'pending' ? (
           <div className="flex justify-between w-full">
             <div className="space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                leftIcon={<X size={16} />}
-                onClick={handleReject}
-              >
+              <Button variant="outline" size="sm" leftIcon={<X size={16} />} onClick={handleReject}>
                 Decline
               </Button>
-              <Button
-                variant="success"
-                size="sm"
-                leftIcon={<Check size={16} />}
-                onClick={handleAccept}
-              >
+              <Button variant="success" size="sm" leftIcon={<Check size={16} />} onClick={handleAccept}>
                 Accept
               </Button>
             </div>
-            
             <Button
               variant="primary"
               size="sm"
               leftIcon={<MessageCircle size={16} />}
-              onClick={handleMessage}
+              onClick={() => navigate(`/chat/${investorId}`)}
             >
               Message
             </Button>
@@ -125,15 +111,14 @@ export const CollaborationRequestCard: React.FC<CollaborationRequestCardProps> =
               variant="outline"
               size="sm"
               leftIcon={<MessageCircle size={16} />}
-              onClick={handleMessage}
+              onClick={() => navigate(`/chat/${investorId}`)}
             >
               Message
             </Button>
-            
             <Button
               variant="primary"
               size="sm"
-              onClick={handleViewProfile}
+              onClick={() => navigate(`/profile/investor/${investorId}`)}
             >
               View Profile
             </Button>
