@@ -51,12 +51,11 @@ export interface ChatConversation {
 }
 
 export interface CollaborationRequest {
-  id: string;
-  // These are populated objects when coming from backend
+  _id: string;
   investorId: string | Investor;
   entrepreneurId: string | Entrepreneur;
   message: string;
-  status: 'pending' | 'accepted' | 'rejected';
+  status: "pending" | "accepted" | "rejected";
   createdAt: string;
 }
 

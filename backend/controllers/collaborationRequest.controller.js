@@ -71,6 +71,8 @@ export const getSentRequests = async (req, res) => {
 
 // Update request status (accept/reject) - only entrepreneur can do this
 export const updateRequestStatus = async (req, res) => {
+  console.log("params:", req.params);
+  console.log("id:", req.params.id);
   try {
     const { id } = req.params;
     const { status } = req.body;

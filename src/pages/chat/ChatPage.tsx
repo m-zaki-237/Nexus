@@ -58,7 +58,7 @@ export const ChatPage: React.FC = () => {
   useEffect(() => {
     if (!currentUser) return;
 
-    const socket = io('http://localhost:5000', {
+    const socket = io('http://localhost:8000', {
       transports: ['websocket', 'polling'],
     });
 

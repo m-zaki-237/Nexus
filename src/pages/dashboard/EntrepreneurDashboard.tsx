@@ -40,11 +40,18 @@ export const EntrepreneurDashboard: React.FC = () => {
     fetchData();
   }, []);
 
-  const handleRequestStatusUpdate = (requestId: string, status: 'accepted' | 'rejected') => {
-    setCollaborationRequests(prev =>
-      prev.map(req => req.id === requestId ? { ...req, status } : req)
-    );
-  };
+const handleRequestStatusUpdate = (
+  requestId: string,
+  status: 'accepted' | 'rejected'
+) => {
+  setCollaborationRequests(prev =>
+    prev.map(req =>
+      req._id === requestId
+        ? { ...req, status }
+        : req
+    )
+  );
+};
 
   if (!user) return null;
 
@@ -136,7 +143,7 @@ export const EntrepreneurDashboard: React.FC = () => {
                 <div className="space-y-4">
                   {collaborationRequests.map(request => (
                     <CollaborationRequestCard
-                      key={request.id}
+                      key={request._id}
                       request={request}
                       onStatusUpdate={handleRequestStatusUpdate}
                     />

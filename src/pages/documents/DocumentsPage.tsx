@@ -201,7 +201,7 @@ export const DocumentsPage: React.FC = () => {
 
                         <div className="flex items-center gap-2 ml-4">
                           <a
-                            href={`http://localhost:5000${doc.fileUrl}`}
+                            href={`http://localhost:8000${doc.fileUrl}`}
                             target="_blank"
                             rel="noopener noreferrer"
                           >

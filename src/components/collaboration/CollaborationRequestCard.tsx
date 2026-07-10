@@ -30,20 +30,30 @@ export const CollaborationRequestCard: React.FC<CollaborationRequestCardProps> =
   const investorAvatar = investor.avatarUrl || '';
   const investorOnline = investor.isOnline || false;
 
-  const handleAccept = async () => {
-    try {
-      await api.patch(`/collaboration-requests/${request.id}/status`, { status: 'accepted' });
-      onStatusUpdate?.(request.id, 'accepted');
-      toast.success('Request accepted');
-    } catch {
-      toast.error('Failed to update request');
-    }
-  };
+ const handleAccept = async () => {
+  try {
+    const res = await api.patch(
+      `/collaboration-requests/${request._id}/status`,
+      { status: "accepted" }
+    );
+
+    console.log(res.data);
+
+    // Force UI update
+    request.status = "accepted" as any;
+
+    onStatusUpdate?.(request._id, "accepted");
+
+    toast.success("Accepted");
+  } catch (err: any) {
+    console.log(err.response?.data);
+  }
+};
 
   const handleReject = async () => {
     try {
-      await api.patch(`/collaboration-requests/${request.id}/status`, { status: 'rejected' });
-      onStatusUpdate?.(request.id, 'rejected');
+      await api.patch(`/collaboration-requests/${request._id}/status`, { status: 'rejected' });
+      onStatusUpdate?.(request._id, 'rejected');
       toast.success('Request declined');
     } catch {
       toast.error('Failed to update request');
