@@ -115,6 +115,9 @@ export const createCheckoutSession = async (req, res) => {
       await user.save();
     }
 
+    const redirectPath = user.role === 'investor' ? '/dashboard/investor' : '/dashboard/entrepreneur';
+    const successUrl = `${clientUrl}${redirectPath}?success=true&session_id={CHECKOUT_SESSION_ID}`;
+
     let session;
     try {
       session = await stripe.checkout.sessions.create({
@@ -128,7 +131,7 @@ export const createCheckoutSession = async (req, res) => {
             quantity: 1,
           },
         ],
-        success_url: `${clientUrl}/pricing?success=true&session_id={CHECKOUT_SESSION_ID}`,
+        success_url: successUrl,
         cancel_url: `${clientUrl}/pricing?canceled=true`,
         metadata: {
           userId: user._id.toString(),
@@ -158,7 +161,7 @@ export const createCheckoutSession = async (req, res) => {
               quantity: 1,
             },
           ],
-          success_url: `${clientUrl}/pricing?success=true&session_id={CHECKOUT_SESSION_ID}`,
+          success_url: successUrl,
           cancel_url: `${clientUrl}/pricing?canceled=true`,
           metadata: {
             userId: user._id.toString(),
@@ -290,6 +293,7 @@ export const handleWebhook = async (req, res) => {
         break;
       }
 
+      case 'customer.subscription.created':
       case 'customer.subscription.updated': {
         const subscription = event.data.object;
         let user = await User.findOne({ stripeSubscriptionId: subscription.id });
@@ -298,8 +302,11 @@ export const handleWebhook = async (req, res) => {
         }
 
         if (user) {
+          user.stripeSubscriptionId = subscription.id;
           user.status = subscription.status;
-          user.currentPeriodEnd = new Date(subscription.current_period_end * 1000);
+          if (subscription.current_period_end) {
+            user.currentPeriodEnd = new Date(subscription.current_period_end * 1000);
+          }
           user.cancelAtPeriodEnd = subscription.cancel_at_period_end || false;
 
           if (subscription.status === 'active' || subscription.status === 'trialing') {
@@ -328,6 +335,22 @@ export const handleWebhook = async (req, res) => {
         break;
       }
 
+      case 'invoice.payment_succeeded': {
+        const invoice = event.data.object;
+        if (invoice.subscription) {
+          let user = await User.findOne({ stripeSubscriptionId: invoice.subscription });
+          if (!user && invoice.customer) {
+            user = await User.findOne({ stripeCustomerId: invoice.customer });
+          }
+          if (user) {
+            user.plan = 'pro';
+            user.status = 'active';
+            await user.save();
+          }
+        }
+        break;
+      }
+
       case 'invoice.payment_failed': {
         const invoice = event.data.object;
         let user = null;
@@ -345,8 +368,22 @@ export const handleWebhook = async (req, res) => {
         break;
       }
 
+      // Informational events acknowledged silently
+      case 'payment_intent.created':
+      case 'payment_intent.succeeded':
+      case 'charge.succeeded':
+      case 'charge.updated':
+      case 'customer.created':
+      case 'customer.updated':
+      case 'invoice.created':
+      case 'invoice.finalized':
+      case 'invoice.paid':
+      case 'invoice_payment.paid':
+      case 'payment_method.attached':
+        break;
+
       default:
-        console.log(`Unhandled event type ${event.type}`);
+        console.log(`[Stripe Webhook] Event received: ${event.type}`);
     }
 
     res.status(200).json({ received: true });

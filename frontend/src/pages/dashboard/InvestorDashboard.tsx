@@ -1,22 +1,34 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { Users, PieChart, Filter, Search, PlusCircle } from 'lucide-react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { Users, PieChart, Filter, Search, PlusCircle, Sparkles } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Card, CardBody, CardHeader } from '../../components/ui/Card';
 import { Input } from '../../components/ui/Input';
 import { Badge } from '../../components/ui/Badge';
 import { EntrepreneurCard } from '../../components/entrepreneur/EntrepreneurCard';
 import { useAuth } from '../../context/AuthContext';
+import { useSubscription } from '../../hooks/useSubscription';
 import { Entrepreneur, CollaborationRequest } from '../../types';
 import api from '../../api/axios';
+import toast from 'react-hot-toast';
 
 export const InvestorDashboard: React.FC = () => {
   const { user } = useAuth();
+  const { isPro, refreshSubscription } = useSubscription();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedIndustries, setSelectedIndustries] = useState<string[]>([]);
   const [entrepreneurs, setEntrepreneurs] = useState<Entrepreneur[]>([]);
   const [sentRequests, setSentRequests] = useState<CollaborationRequest[]>([]);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (searchParams.get('success') === 'true') {
+      toast.success('Subscription completed successfully! Welcome to Nexus Pro.');
+      refreshSubscription();
+      setSearchParams({}, { replace: true });
+    }
+  }, [searchParams, setSearchParams, refreshSubscription]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -67,7 +79,15 @@ export const InvestorDashboard: React.FC = () => {
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Discover Startups</h1>
+          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+            Welcome, {user.name}
+            {isPro && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-extrabold bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-md">
+                <Sparkles className="w-3.5 h-3.5 text-amber-200 fill-current" />
+                PRO
+              </span>
+            )}
+          </h1>
           <p className="text-gray-600">Find and connect with promising entrepreneurs</p>
         </div>
         <Link to="/entrepreneurs">

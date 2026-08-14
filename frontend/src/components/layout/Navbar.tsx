@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Menu, X, Bell, MessageCircle, User, LogOut, Building2, CircleDollarSign } from 'lucide-react';
+import { Menu, X, Bell, MessageCircle, User, LogOut, Building2, CircleDollarSign, Sparkles } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { Avatar } from '../ui/Avatar';
 import { Button } from '../ui/Button';
@@ -52,6 +52,8 @@ export const Navbar: React.FC = () => {
     }
   ];
   
+  const isProUser = user?.plan === 'pro' && (user?.status === 'active' || user?.status === 'trialing');
+
   return (
     <nav className="bg-white shadow-md">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -99,7 +101,15 @@ export const Navbar: React.FC = () => {
                     size="sm"
                     status={user.isOnline ? 'online' : 'offline'}
                   />
-                  <span className="text-sm font-medium text-gray-700">{user.name}</span>
+                  <span className="text-sm font-medium text-gray-700 flex items-center gap-1.5">
+                    {user.name}
+                    {isProUser && (
+                      <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-sm">
+                        <Sparkles className="w-3 h-3 text-amber-200 fill-current" />
+                        PRO
+                      </span>
+                    )}
+                  </span>
                 </Link>
               </div>
             ) : (
@@ -144,7 +154,15 @@ export const Navbar: React.FC = () => {
                     status={user.isOnline ? 'online' : 'offline'}
                   />
                   <div>
-                    <p className="text-sm font-medium text-gray-800">{user.name}</p>
+                    <p className="text-sm font-medium text-gray-800 flex items-center gap-1.5">
+                      {user.name}
+                      {isProUser && (
+                        <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-sm">
+                          <Sparkles className="w-3 h-3 text-amber-200 fill-current" />
+                          PRO
+                        </span>
+                      )}
+                    </p>
                     <p className="text-xs text-gray-500 capitalize">{user.role}</p>
                   </div>
                 </div>

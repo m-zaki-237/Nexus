@@ -1,21 +1,33 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { Users, Bell, Calendar, TrendingUp, AlertCircle, PlusCircle } from 'lucide-react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { Users, Bell, Calendar, TrendingUp, AlertCircle, PlusCircle, Sparkles } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Card, CardBody, CardHeader } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { CollaborationRequestCard } from '../../components/collaboration/CollaborationRequestCard';
 import { InvestorCard } from '../../components/investor/InvestorCard';
 import { useAuth } from '../../context/AuthContext';
+import { useSubscription } from '../../hooks/useSubscription';
 import { CollaborationRequest, Investor } from '../../types';
 import api from '../../api/axios';
+import toast from 'react-hot-toast';
 
 export const EntrepreneurDashboard: React.FC = () => {
   const { user } = useAuth();
+  const { isPro, refreshSubscription } = useSubscription();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [collaborationRequests, setCollaborationRequests] = useState<CollaborationRequest[]>([]);
   const [recommendedInvestors, setRecommendedInvestors] = useState<Investor[]>([]);
   const [meetingCount, setMeetingCount] = useState(0);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (searchParams.get('success') === 'true') {
+      toast.success('Subscription completed successfully! Welcome to Nexus Pro.');
+      refreshSubscription();
+      setSearchParams({}, { replace: true });
+    }
+  }, [searchParams, setSearchParams, refreshSubscription]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -28,7 +40,7 @@ export const EntrepreneurDashboard: React.FC = () => {
         setCollaborationRequests(requestsRes.data.requests || []);
         setRecommendedInvestors((investorsRes.data.investors || []).slice(0, 3));
         const upcoming = (meetingsRes.data.meetings || []).filter(
-          (m: any) => m.status === 'accepted' && new Date(m.startTime) > new Date()
+          (m: any) => m.status === 'scheduled' || m.status === 'pending'
         );
         setMeetingCount(upcoming.length);
       } catch (error) {
@@ -40,18 +52,18 @@ export const EntrepreneurDashboard: React.FC = () => {
     fetchData();
   }, []);
 
-const handleRequestStatusUpdate = (
-  requestId: string,
-  status: 'accepted' | 'rejected'
-) => {
-  setCollaborationRequests(prev =>
-    prev.map(req =>
-      req._id === requestId
-        ? { ...req, status }
-        : req
-    )
-  );
-};
+  const handleRequestStatusUpdate = (
+    requestId: string,
+    status: 'accepted' | 'rejected'
+  ) => {
+    setCollaborationRequests(prev =>
+      prev.map(req =>
+        (req._id === requestId || req.id === requestId)
+          ? { ...req, status }
+          : req
+      )
+    );
+  };
 
   if (!user) return null;
 
@@ -61,7 +73,15 @@ const handleRequestStatusUpdate = (
     <div className="space-y-6 animate-fade-in">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Welcome, {user.name}</h1>
+          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+            Welcome, {user.name}
+            {isPro && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-extrabold bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-md">
+                <Sparkles className="w-3.5 h-3.5 text-amber-200 fill-current" />
+                PRO
+              </span>
+            )}
+          </h1>
           <p className="text-gray-600">Here's what's happening with your startup today</p>
         </div>
         <Link to="/investors">
