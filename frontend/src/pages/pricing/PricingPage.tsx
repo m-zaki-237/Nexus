@@ -223,7 +223,7 @@ export const PricingPage: React.FC = () => {
                   leftIcon={<Sparkles className="h-4 w-4 text-amber-300" />}
                   className="bg-gradient-to-r from-primary-600 to-amber-600 hover:from-primary-700 hover:to-amber-700 text-white font-bold shadow-lg"
                 >
-                  Upgrade to Pro ($29/mo)
+                  Purchase Pro ($29/mo)
                 </Button>
               )}
             </div>

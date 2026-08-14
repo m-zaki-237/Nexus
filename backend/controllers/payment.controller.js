@@ -39,22 +39,9 @@ export const createCheckoutSession = async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    const secretKey = process.env.STRIPE_SECRET_KEY || '';
-    const isMockStripe =
-      !secretKey ||
-      secretKey.includes('your_stripe') ||
-      secretKey === 'sk_test_placeholder';
-
-    if (isMockStripe) {
-      console.log('[Stripe Demo Mode] Upgrading user to Pro locally...');
-      user.plan = 'pro';
-      user.status = 'active';
-      user.currentPeriodEnd = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-      user.stripeCustomerId = user.stripeCustomerId || 'cus_demo_123456';
-      user.stripeSubscriptionId = 'sub_demo_123456';
-      await user.save();
-
-      return res.status(200).json({ url: `${clientUrl}/pricing?success=true` });
+    const secretKey = process.env.STRIPE_SECRET_KEY;
+    if (!secretKey || secretKey.includes('your_stripe')) {
+      return res.status(400).json({ message: 'STRIPE_SECRET_KEY is not configured in backend/.env' });
     }
 
     const stripe = getStripe();
