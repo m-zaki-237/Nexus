@@ -27,6 +27,7 @@ export const getSubscription = async (req, res) => {
     console.error('getSubscription error:', error);
     res.status(500).json({ message: 'Server error retrieving subscription' });
   }
+};
 const getClientUrl = (req) => {
   if (process.env.CLIENT_URL && process.env.CLIENT_URL.trim() !== '') {
     return process.env.CLIENT_URL.trim().replace(/\/$/, '');
