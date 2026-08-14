@@ -27,12 +27,26 @@ export const getSubscription = async (req, res) => {
     console.error('getSubscription error:', error);
     res.status(500).json({ message: 'Server error retrieving subscription' });
   }
+const getClientUrl = (req) => {
+  if (process.env.CLIENT_URL && process.env.CLIENT_URL.trim() !== '') {
+    return process.env.CLIENT_URL.trim().replace(/\/$/, '');
+  }
+  if (req && req.headers && req.headers.origin) {
+    return req.headers.origin.trim().replace(/\/$/, '');
+  }
+  if (req && req.headers && req.headers.referer) {
+    try {
+      const parsed = new URL(req.headers.referer);
+      return parsed.origin.replace(/\/$/, '');
+    } catch (e) {}
+  }
+  return 'http://localhost:5173';
 };
 
 export const createCheckoutSession = async (req, res) => {
   try {
     const { priceId } = req.body || {};
-    const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+    const clientUrl = getClientUrl(req);
 
     const user = await User.findById(req.user._id);
     if (!user) {
@@ -164,7 +178,7 @@ export const createCheckoutSession = async (req, res) => {
 export const createPortalSession = async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
-    const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+    const clientUrl = getClientUrl(req);
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });

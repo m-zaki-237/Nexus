@@ -24,9 +24,23 @@ dotenv.config()
 const app = express()
 const httpServer = createServer(app)
 
+const corsOriginDelegate = (origin, callback) => {
+  const envClientUrl = process.env.CLIENT_URL ? process.env.CLIENT_URL.trim().replace(/\/$/, '') : null;
+  if (!origin) return callback(null, true);
+  const cleanOrigin = origin.trim().replace(/\/$/, '');
+  if (
+    cleanOrigin === envClientUrl ||
+    cleanOrigin.includes('localhost') ||
+    cleanOrigin.includes('127.0.0.1')
+  ) {
+    return callback(null, true);
+  }
+  return callback(null, true);
+};
+
 const io = new Server(httpServer, {
   cors: {
-    origin: process.env.CLIENT_URL || "http://localhost:5173",
+    origin: corsOriginDelegate,
     credentials: true,
   }
 })
@@ -39,7 +53,7 @@ app.use(express.json())
 app.use(cookieParser());
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || "http://localhost:5173",
+    origin: corsOriginDelegate,
     credentials: true,
   })
 );
