@@ -27,11 +27,11 @@ export const PricingPage: React.FC = () => {
       hasHandledParams.current = true;
       toast.error('Checkout was canceled. Feel free to upgrade whenever you are ready!');
       setSearchParams({}, { replace: true });
-    } else if (searchParams.get('demo_portal') === 'true') {
+    } else if (searchParams.get('portal') === 'true') {
       hasHandledParams.current = true;
-      toast('Stripe Customer Portal Demo: With live Stripe keys, this opens Stripe\'s Billing Portal to manage invoices and cancel subscriptions.', {
+      toast('Opened Billing Portal to manage invoices and subscriptions.', {
         icon: '💳',
-        duration: 5000,
+        duration: 4000,
       });
       setSearchParams({}, { replace: true });
     }
@@ -59,7 +59,7 @@ export const PricingPage: React.FC = () => {
     }
   };
 
-  const handleCancelDemo = async () => {
+  const handleCancel = async () => {
     setCancelLoading(true);
     try {
       await cancelSubscription();
@@ -208,10 +208,10 @@ export const PricingPage: React.FC = () => {
                     variant="ghost"
                     fullWidth
                     isLoading={cancelLoading}
-                    onClick={handleCancelDemo}
+                    onClick={handleCancel}
                     className="text-xs text-gray-500 hover:text-red-600 underline"
                   >
-                    Cancel Subscription (Demo)
+                    Cancel Subscription
                   </Button>
                 </div>
               ) : (
@@ -223,7 +223,7 @@ export const PricingPage: React.FC = () => {
                   leftIcon={<Sparkles className="h-4 w-4 text-amber-300" />}
                   className="bg-gradient-to-r from-primary-600 to-amber-600 hover:from-primary-700 hover:to-amber-700 text-white font-bold shadow-lg"
                 >
-                  Purchase Pro ($29/mo)
+                  Subscribe
                 </Button>
               )}
             </div>
