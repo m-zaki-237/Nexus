@@ -9,6 +9,8 @@ import collaborationRequestRouter from './routes/collaborationRequest.route.js'
 import meetingRouter from './routes/meeting.route.js'
 import documentRouter from './routes/document.route.js'
 import messageRouter from './routes/message.route.js'
+import paymentRouter from './routes/payment.route.js'
+import { handleWebhook } from './controllers/payment.controller.js'
 import cors from "cors";
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -29,6 +31,10 @@ const io = new Server(httpServer, {
   }
 })
 
+// Webhook MUST use raw body — mount it before JSON body parser middleware
+app.post('/api/payments/webhook', express.raw({ type: 'application/json' }), handleWebhook);
+app.post('/payments/webhook', express.raw({ type: 'application/json' }), handleWebhook);
+
 app.use(express.json())
 app.use(cookieParser());
 app.use(
@@ -45,11 +51,18 @@ const port = process.env.PORT || 5000
 
 connectDB()
 
+app.use('/api', userRouter)
 app.use('/', userRouter)
+app.use('/api/collaboration-requests', collaborationRequestRouter)
 app.use('/collaboration-requests', collaborationRequestRouter)
+app.use('/api/meetings', meetingRouter)
 app.use('/meetings', meetingRouter)
+app.use('/api/documents', documentRouter)
 app.use('/documents', documentRouter)
+app.use('/api/messages', messageRouter)
 app.use('/messages', messageRouter)
+app.use('/api/payments', paymentRouter)
+app.use('/payments', paymentRouter)
 
 // Socket.IO - real-time chat
 const onlineUsers = new Map(); // userId -> socketId

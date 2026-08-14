@@ -11,17 +11,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  const fetchProfile = async (): Promise<void> => {
+    try {
+      const res = await api.get("/auth/profile");
+      setUser(res.data.user);
+    } catch {
+      setUser(null);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const res = await api.get("/auth/profile");
-        setUser(res.data.user);
-      } catch {
-        setUser(null);
-      } finally {
-        setIsLoading(false);
-      }
-    };
     fetchProfile();
   }, []);
 
@@ -93,6 +94,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     register,
     logout,
     updateProfile,
+    refreshProfile: fetchProfile,
     isAuthenticated: !!user,
     isLoading,
   };

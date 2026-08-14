@@ -1,5 +1,14 @@
 export type UserRole = 'entrepreneur' | 'investor';
 
+export interface Subscription {
+  plan: 'free' | 'pro';
+  status: string;
+  currentPeriodEnd?: string | null;
+  cancelAtPeriodEnd?: boolean;
+  stripeCustomerId?: string | null;
+  stripeSubscriptionId?: string | null;
+}
+
 export interface User {
   id: string;
   _id?: string;
@@ -11,6 +20,12 @@ export interface User {
   isOnline?: boolean;
   location?: string;
   createdAt: string;
+  stripeCustomerId?: string | null;
+  stripeSubscriptionId?: string | null;
+  plan?: 'free' | 'pro';
+  status?: string;
+  currentPeriodEnd?: string | null;
+  cancelAtPeriodEnd?: boolean;
 }
 
 export interface Entrepreneur extends User {
@@ -95,6 +110,7 @@ export interface AuthContextType {
   register: (name: string, email: string, password: string, role: UserRole) => Promise<void>;
   logout: () => Promise<void>;
   updateProfile: (updates: Partial<User>) => Promise<void>;
+  refreshProfile: () => Promise<void>;
   isAuthenticated: boolean;
   isLoading: boolean;
 }

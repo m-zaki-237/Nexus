@@ -106,6 +106,38 @@ const userSchema = new mongoose.Schema({
       type: String,
       default: "",
     },
+
+    // Stripe Subscription Fields
+    stripeCustomerId: {
+      type: String,
+      default: null,
+    },
+
+    stripeSubscriptionId: {
+      type: String,
+      default: null,
+    },
+
+    plan: {
+      type: String,
+      enum: ["free", "pro"],
+      default: "free",
+    },
+
+    status: {
+      type: String,
+      default: "inactive",
+    },
+
+    currentPeriodEnd: {
+      type: Date,
+      default: null,
+    },
+
+    cancelAtPeriodEnd: {
+      type: Boolean,
+      default: false,
+    },
 }, { timestamps: true });
 
 const User = mongoose.model('User', userSchema);

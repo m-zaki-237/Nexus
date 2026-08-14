@@ -3,7 +3,7 @@ import { NavLink } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { 
   Home, Building2, CircleDollarSign, Users, MessageCircle, 
-  Bell, FileText, Settings, HelpCircle, Calendar
+  Bell, FileText, Settings, HelpCircle, Calendar, Sparkles
 } from 'lucide-react';
 
 interface SidebarItemProps {
@@ -61,6 +61,7 @@ export const Sidebar: React.FC = () => {
   
   // Common items at the bottom
   const commonItems = [
+    { to: '/pricing', icon: <Sparkles size={20} className="text-amber-500" />, text: 'Pricing & Plans' },
     { to: '/settings', icon: <Settings size={20} />, text: 'Settings' },
     { to: '/help', icon: <HelpCircle size={20} />, text: 'Help & Support' },
   ];

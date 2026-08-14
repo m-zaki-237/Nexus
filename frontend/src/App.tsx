@@ -26,6 +26,7 @@ import { DocumentsPage } from './pages/documents/DocumentsPage';
 import { SettingsPage } from './pages/settings/SettingsPage';
 import { HelpPage } from './pages/help/HelpPage';
 import { DealsPage } from './pages/deals/DealsPage';
+import { PricingPage } from './pages/pricing/PricingPage';
 
 // Meetings
 import { MeetingsPage } from './pages/meetings/MeetingsPage';
@@ -55,6 +56,10 @@ function App() {
           </Route>
           
           {/* Feature Routes */}
+          <Route path="/pricing" element={<DashboardLayout />}>
+            <Route index element={<PricingPage />} />
+          </Route>
+
           <Route path="/investors" element={<DashboardLayout />}>
             <Route index element={<InvestorsPage />} />
           </Route>
