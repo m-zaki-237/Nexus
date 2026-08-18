@@ -298,6 +298,4 @@ Please follow conventional commit messages and keep PRs focused.
 
 ## Author
 
-**Zaki** — [@m-zaki-237](https://github.com/m-zaki-237)
-
-> Built as part of a full-stack portfolio project. MERN stack developer with a passion for building SaaS products.
+**Muhammad Zakria** — [@m-zaki-237](https://github.com/m-zaki-237)
